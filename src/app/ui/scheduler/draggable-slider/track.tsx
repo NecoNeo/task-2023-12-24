@@ -20,11 +20,31 @@ const ValueSegment: React.FC<{ hour: number; startValue: number; endValue: numbe
   const segmentEnd = Math.min(end, hourEnd);
   const w = segmentEnd - segmentStart < 0 ? 0 : segmentEnd - segmentStart;
   const l = segmentStart - hourStart < 0 ? 0 : segmentStart - hourStart;
+  const showLeftCtrlPoint = segmentStart === start && w > 0;
+  const showRightCtrlPoint = segmentEnd === end && w > 0;
 
   return (
     <div className="absolute z-30 top-0 left-[-1px] h-full w-12">
       <div className={`absolute top-0 h-full bg-red-500`} style={{ left: `${l * 100}%`, width: `${w * 100}%` }}></div>
+      {showLeftCtrlPoint ? <CtrlPoint type="left" pos={start - hourStart} /> : null}
+      {showRightCtrlPoint ? <CtrlPoint type="right" pos={end - hourStart} /> : null}
     </div>
+  );
+};
+
+/** control points for resizing value range */
+const CtrlPoint: React.FC<{ type: 'left' | 'right'; pos: number }> = (props) => {
+  return (
+    <div
+      className="absolute z-50 border-2 border-solid border-red-600 bg-white"
+      style={{
+        top: '20px',
+        left: `calc(${props.pos * 100}% - 5px)`,
+        width: '10px',
+        height: '10px',
+        borderRadius: '5px',
+      }}
+    ></div>
   );
 };
 

@@ -12,7 +12,7 @@ const ScheduleItem: React.FC<{ slotName: string }> = (props) => {
       </div>
 
       <div className="flex p-6">
-        <div>
+        <div className="pr-2">
           <Image
             className="p-6 bg-gray-100 dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
             src="/vercel.svg"
@@ -22,7 +22,7 @@ const ScheduleItem: React.FC<{ slotName: string }> = (props) => {
             priority
           />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 select-none">
           <DraggableSlider />
         </div>
       </div>

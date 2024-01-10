@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const HourLabel: React.FC<{ pos: 'left' | 'right'; hour: number }> = (props) => {
   const offset = props.pos === 'left' ? 'left-[-1.25rem]' : 'right-[-1.25rem]';
@@ -10,7 +10,13 @@ const HourLabel: React.FC<{ pos: 'left' | 'right'; hour: number }> = (props) => 
 };
 
 /** highlighting activated hours */
-const ValueSegment: React.FC<{ hour: number; startValue: number; endValue: number }> = (props) => {
+const ValueSegment: React.FC<{
+  hour: number;
+  startValue: number;
+  endValue: number;
+  updateStartVal: (x: number) => void;
+  updateEndVal: (x: number) => void;
+}> = (props) => {
   const start = props.startValue;
   const end = props.endValue;
   const hourStart = props.hour;
@@ -25,42 +31,128 @@ const ValueSegment: React.FC<{ hour: number; startValue: number; endValue: numbe
 
   return (
     <div className="absolute z-30 top-0 left-[-1px] h-full w-12">
+      {showLeftCtrlPoint ? <CtrlPoint type="left" pos={start - hourStart} updateVal={props.updateStartVal} /> : null}
+      {showRightCtrlPoint ? <CtrlPoint type="right" pos={end - hourStart} updateVal={props.updateEndVal} /> : null}
       <div className={`absolute top-0 h-full bg-red-500`} style={{ left: `${l * 100}%`, width: `${w * 100}%` }}></div>
-      {showLeftCtrlPoint ? <CtrlPoint type="left" pos={start - hourStart} /> : null}
-      {showRightCtrlPoint ? <CtrlPoint type="right" pos={end - hourStart} /> : null}
     </div>
   );
 };
 
 /** control points for resizing value range */
-const CtrlPoint: React.FC<{ type: 'left' | 'right'; pos: number }> = (props) => {
+const CtrlPoint: React.FC<{ type: 'left' | 'right'; pos: number; updateVal: (x: number) => void }> = (props) => {
+  const container = useRef<HTMLDivElement>(null);
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    const dragHandler = (ev: DragEvent) => {
+      console.log('drag', ev.pageX, ev.pageY);
+      if (ev.pageX) {
+        props.updateVal(ev.pageX);
+      }
+    };
+
+    // compatible for react strict mode
+    if (!initialized.current) {
+      container.current?.addEventListener('drag', dragHandler);
+      initialized.current = true;
+
+      return () => {
+        // compatible for react strict mode
+        if (initialized.current) {
+          initialized.current = false;
+        }
+      };
+    }
+  });
+
   return (
     <div
-      className="absolute z-50 border-2 border-solid border-red-600 bg-white"
-      style={{
-        top: '20px',
-        left: `calc(${props.pos * 100}% - 5px)`,
-        width: '10px',
-        height: '10px',
-        borderRadius: '5px',
-      }}
-    ></div>
+      className="absolute z-50"
+      ref={container}
+      style={{ width: '24px', height: '24px', top: '12px', left: `calc(${props.pos * 100}% - 12px)` }}
+      draggable
+    >
+      <div
+        className="absolute z-40 border-2 border-solid border-red-600 bg-white"
+        style={{
+          top: '7px',
+          left: '7px',
+          width: '10px',
+          height: '10px',
+          borderRadius: '5px',
+        }}
+      ></div>
+    </div>
   );
 };
+
+function getElPageLeft(el: HTMLElement | null): number {
+  if (el) {
+    return el.offsetLeft + getElPageLeft(el.offsetParent as HTMLElement);
+  } else {
+    return 0;
+  }
+}
 
 /** container track for hours */
 const Track: React.FC<{ startHour: number; endHour: number; startValue: number; endValue: number }> = (props) => {
   const duration = props.endHour >= props.startHour ? props.endHour - props.startHour : 0;
   const availableHours = new Array(duration).fill(0).map((_, i) => props.startHour + i);
+  const container = useRef<HTMLDivElement>(null);
+  const initialized = useRef(false);
+
+  const [containerPageLeft, setContainerPageLeft] = useState(0);
+
+  const [startValue, setStartValue] = useState(props.startValue);
+  const [endValue, setEndValue] = useState(props.endValue);
+
+  useEffect(() => {
+    // window.addEventListener('mousemove', (ev) => {
+    //   console.log(ev.pageX);
+    // });
+
+    const handler = () => {
+      // console.log('resizing');
+      // console.log('left', getElPageLeft(container.current));
+      // console.log('width', container.current?.offsetWidth);
+      setContainerPageLeft(getElPageLeft(container.current));
+    };
+    // compatible for react strict mode
+    if (!initialized.current && container.current) {
+      window.addEventListener('resize', handler);
+      handler();
+      initialized.current = true;
+    }
+
+    return () => {
+      // compatible for react strict mode
+      if (initialized.current) {
+        window.removeEventListener('resize', handler);
+        initialized.current = false;
+      }
+    };
+  }, []);
+
   return (
     <div className="p-4">
-      <div className="float-left leading-[4rem]">
+      <div className="float-left leading-[4rem]" ref={container}>
         {availableHours.map((hour) => (
           <div
             key={hour}
             className="relative inline-block box-border mr-[-1px] w-12 h-12 border-l border-r border-solid border-gray-200"
           >
-            <ValueSegment hour={hour} startValue={props.startValue} endValue={props.endValue} />
+            <ValueSegment
+              hour={hour}
+              startValue={startValue}
+              endValue={endValue}
+              updateStartVal={(v) => {
+                setStartValue((v - containerPageLeft) / 48);
+              }}
+              updateEndVal={(v) => {
+                console.log('u');
+                setEndValue((v - containerPageLeft) / 48);
+              }}
+            />
 
             <HourLabel pos={'left'} hour={hour} />
             <HourLabel pos={'right'} hour={hour + 1} />

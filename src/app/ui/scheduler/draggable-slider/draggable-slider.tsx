@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Track from './track';
 
 const DraggableSlider: React.FC = () => {
@@ -7,6 +7,11 @@ const DraggableSlider: React.FC = () => {
 
   const startValue = 5;
   const endValue = 8;
+
+  useEffect(() => {
+    // DO NOTHING
+  });
+
   return (
     <div>
       <Track startHour={startHour} endHour={endHour} startValue={startValue} endValue={endValue} />

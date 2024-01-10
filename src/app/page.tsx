@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import AttrForm from './ui/attr-form/attr-form';
 import ScheduleItem from './ui/scheduler/schedule-item';

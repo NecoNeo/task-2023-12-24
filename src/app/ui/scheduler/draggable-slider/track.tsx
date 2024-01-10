@@ -31,10 +31,13 @@ const ValueSegment: React.FC<{
   const showRightCtrlPoint = segmentEnd === end && w > 0;
 
   return (
-    <div className="absolute z-30 top-0 left-[-1px] h-full w-12">
+    <div className="absolute top-0 left-[-1px] h-full w-12">
       {showLeftCtrlPoint ? <CtrlPoint type="left" pos={start - hourStart} updateVal={props.updateStartVal} /> : null}
       {showRightCtrlPoint ? <CtrlPoint type="right" pos={end - hourStart} updateVal={props.updateEndVal} /> : null}
-      <div className={`absolute top-0 h-full bg-red-500`} style={{ left: `${l * 100}%`, width: `${w * 100}%` }}></div>
+      <div
+        className="absolute z-30 top-0 h-full bg-red-500"
+        style={{ left: `${l * 100}%`, width: `${w * 100}%` }}
+      ></div>
     </div>
   );
 };

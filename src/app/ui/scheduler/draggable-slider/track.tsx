@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useAnimationFrame } from '../animation';
 
 const HourLabel: React.FC<{ pos: 'left' | 'right'; hour: number }> = (props) => {
   const offset = props.pos === 'left' ? 'left-[-1.25rem]' : 'right-[-1.25rem]';
@@ -43,11 +44,15 @@ const CtrlPoint: React.FC<{ type: 'left' | 'right'; pos: number; updateVal: (x: 
   const container = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
 
+  const nextFrame = useAnimationFrame();
+
   useEffect(() => {
     const dragHandler = (ev: DragEvent) => {
-      console.log('drag', ev.pageX, ev.pageY);
+      // console.log('drag', ev.pageX, ev.pageY);
       if (ev.pageX) {
-        props.updateVal(ev.pageX);
+        nextFrame(() => {
+          props.updateVal(ev.pageX);
+        });
       }
     };
 
@@ -112,6 +117,7 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
     // });
 
     const handler = () => {
+      // TODO reduce calc times when resizing
       // console.log('resizing');
       // console.log('left', getElPageLeft(container.current));
       // console.log('width', container.current?.offsetWidth);
@@ -149,7 +155,6 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
                 setStartValue((v - containerPageLeft) / 48);
               }}
               updateEndVal={(v) => {
-                console.log('u');
                 setEndValue((v - containerPageLeft) / 48);
               }}
             />

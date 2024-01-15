@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAnimationFrame } from '../animation';
+import { TRACK_LINE_HEIGHT, GRID_WIDTH, GRID_HEIGHT } from '../config';
 
 const HourLabel: React.FC<{ pos: 'left' | 'right'; hour: number }> = (props) => {
   const offset = props.pos === 'left' ? 'left-[-1.25rem]' : 'right-[-1.25rem]';
@@ -15,8 +16,8 @@ const ValueSegment: React.FC<{
   hour: number;
   startValue: number;
   endValue: number;
-  updateStartVal: (x: number) => void;
-  updateEndVal: (x: number) => void;
+  updateStartVal: (x: number, y: number) => void;
+  updateEndVal: (x: number, y: number) => void;
 }> = (props) => {
   const start = props.startValue;
   const end = props.endValue;
@@ -43,7 +44,9 @@ const ValueSegment: React.FC<{
 };
 
 /** control points for resizing value range */
-const CtrlPoint: React.FC<{ type: 'left' | 'right'; pos: number; updateVal: (x: number) => void }> = (props) => {
+const CtrlPoint: React.FC<{ type: 'left' | 'right'; pos: number; updateVal: (x: number, y: number) => void }> = (
+  props,
+) => {
   const container = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
 
@@ -52,9 +55,9 @@ const CtrlPoint: React.FC<{ type: 'left' | 'right'; pos: number; updateVal: (x: 
   useEffect(() => {
     const dragHandler = (ev: DragEvent) => {
       // console.log('drag', ev.pageX, ev.pageY);
-      if (ev.pageX) {
+      if (ev.pageX || ev.pageY) {
         nextFrame(() => {
-          props.updateVal(ev.pageX);
+          props.updateVal(ev.pageX, ev.pageY);
         });
       }
     };
@@ -94,12 +97,11 @@ const CtrlPoint: React.FC<{ type: 'left' | 'right'; pos: number; updateVal: (x: 
   );
 };
 
-function getElPageLeft(el: HTMLElement | null): number {
-  if (el) {
-    return el.offsetLeft + getElPageLeft(el.offsetParent as HTMLElement);
-  } else {
-    return 0;
-  }
+function getElPageX(el: HTMLElement | null): number {
+  return el ? el.offsetLeft + getElPageX(el.offsetParent as HTMLElement) : 0;
+}
+function getElPageY(el: HTMLElement | null): number {
+  return el ? el.offsetTop + getElPageY(el.offsetParent as HTMLElement) : 0;
 }
 
 /** container track for hours */
@@ -109,10 +111,23 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
   const container = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
 
-  const [containerPageLeft, setContainerPageLeft] = useState(0);
+  const [containerX, setContainerX] = useState(0);
+  const [containerY, setContainerY] = useState(0);
+  const [gridsPerRow, setGridsPerRow] = useState(0);
+  const [rows, setRows] = useState(1);
 
   const [startValue, setStartValue] = useState(props.startValue);
   const [endValue, setEndValue] = useState(props.endValue);
+
+  const calcValWithPageXY = (x: number, y: number, contX: number, contY: number) => {
+    let rowIndex = 0;
+    for (; rowIndex < rows; rowIndex++) {
+      if (y < contY + (rowIndex + 1) * TRACK_LINE_HEIGHT) {
+        break;
+      }
+    }
+    return (x - contX) / (GRID_WIDTH - 1) + rowIndex * gridsPerRow;
+  };
 
   useEffect(() => {
     // window.addEventListener('mousemove', (ev) => {
@@ -124,7 +139,12 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
       // console.log('resizing');
       // console.log('left', getElPageLeft(container.current));
       // console.log('width', container.current?.offsetWidth);
-      setContainerPageLeft(getElPageLeft(container.current));
+      setContainerX(getElPageX(container.current));
+      setContainerY(getElPageY(container.current));
+
+      const gridsPerRow = Math.floor((container.current?.offsetWidth || 0) / (GRID_WIDTH - 1));
+      setGridsPerRow(gridsPerRow);
+      setRows(Math.ceil(availableHours.length / gridsPerRow));
     };
     // compatible for react strict mode
     if (!initialized.current && container.current) {
@@ -140,25 +160,28 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
         initialized.current = false;
       }
     };
-  }, []);
+  }, [availableHours.length]);
 
   return (
     <div className="p-4">
-      <div className="float-left leading-[4rem]" ref={container}>
+      <div style={{ lineHeight: `${TRACK_LINE_HEIGHT}px` }} ref={container}>
         {availableHours.map((hour) => (
           <div
             key={hour}
+            style={{ height: `${GRID_HEIGHT}px`, width: `${GRID_WIDTH}px` }}
             className="relative inline-block box-border mr-[-1px] w-12 h-12 border-l border-r border-solid border-gray-200"
           >
             <ValueSegment
               hour={hour}
               startValue={startValue}
               endValue={endValue}
-              updateStartVal={(v) => {
-                setStartValue((v - containerPageLeft) / 48);
+              updateStartVal={(x: number, y: number) => {
+                if (!containerX && !containerY) return; // 0 value also caused by REACT.STRICT mode in CtrlPoint component
+                setStartValue(calcValWithPageXY(x, y, containerX, containerY));
               }}
-              updateEndVal={(v) => {
-                setEndValue((v - containerPageLeft) / 48);
+              updateEndVal={(x: number, y: number) => {
+                if (!containerX && !containerY) return; // 0 value also caused by REACT.STRICT mode in CtrlPoint component
+                setEndValue(calcValWithPageXY(x, y, containerX, containerY));
               }}
             />
 
@@ -166,12 +189,12 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
             <HourLabel pos={'right'} hour={hour + 1} />
             <div className="absolute z-10 h-[50%] left-[50%] bottom-0 border-r border-solid border-gray-200"></div>
             <div
-              className={`relative inline-block w-[50%] h-[100%] ${
+              className={`absolute top-0 inline-block w-[50%] h-[100%] ${
                 hour < 19 ? 'bg-gray-50' : ''
               } hover:bg-red-300 hover:z-20`}
             ></div>
             <div
-              className={`relative inline-block w-[50%] h-[100%] ${
+              className={`absolute top-0 left-[50%] inline-block w-[50%] h-[100%] ${
                 hour < 18 ? 'bg-gray-50' : ''
               } hover:bg-red-300 hover:z-20`}
             ></div>

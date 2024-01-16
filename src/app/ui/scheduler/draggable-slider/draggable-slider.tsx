@@ -19,6 +19,7 @@ const DraggableSlider: React.FC<{
   useEffect(() => {
     setStartValue(props.startValue);
     setEndValue(props.endValue);
+    // TODO we should check whether the start/end values still fall in validate range when start/end hour is changed
   }, [props.startHour, props.endHour, props.startValue, props.endValue]);
 
   const valueChange = (start: number, end: number) => {

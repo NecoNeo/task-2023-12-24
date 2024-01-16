@@ -13,7 +13,8 @@ const ValueSegment: React.FC<{
   updateStartVal: (x: number, y: number) => void;
   updateEndVal: (x: number, y: number) => void;
   updateDropHighlight: (x: number, y: number) => void;
-  change: () => void;
+  changeStart: () => void;
+  changed: () => void;
 }> = (props) => {
   const start = props.startValue;
   const end = props.endValue;
@@ -33,6 +34,7 @@ const ValueSegment: React.FC<{
     const dragStartHandler = () => {
       const el = createDragTargetEl(GRID_WIDTH * (props.endValue - props.startValue));
       document.body.appendChild(el);
+      props.changeStart();
 
       const dragMove = (ev: MouseEvent) => {
         props.updateDropHighlight(ev.pageX, ev.pageY);
@@ -41,7 +43,7 @@ const ValueSegment: React.FC<{
       };
       const dragEnd = (ev: MouseEvent) => {
         props.updateDropHighlight(ev.pageX, ev.pageY);
-        props.change();
+        props.changed();
         document.body.removeChild(el);
         window.removeEventListener('mousemove', dragMove);
         window.removeEventListener('mouseup', dragEnd);
@@ -69,10 +71,22 @@ const ValueSegment: React.FC<{
   return (
     <div className="absolute top-0 left-[-1px] h-full w-12" ref={container}>
       {showLeftCtrlPoint && !props.isDragging ? (
-        <CtrlPoint type="left" pos={start - hourStart} updateVal={props.updateStartVal} change={props.change} />
+        <CtrlPoint
+          type="left"
+          pos={start - hourStart}
+          updateVal={props.updateStartVal}
+          changeStart={props.changeStart}
+          changed={props.changed}
+        />
       ) : null}
       {showRightCtrlPoint && !props.isDragging ? (
-        <CtrlPoint type="right" pos={end - hourStart} updateVal={props.updateEndVal} change={props.change} />
+        <CtrlPoint
+          type="right"
+          pos={end - hourStart}
+          updateVal={props.updateEndVal}
+          changeStart={props.changeStart}
+          changed={props.changed}
+        />
       ) : null}
       {props.isDragging ? null : (
         <div

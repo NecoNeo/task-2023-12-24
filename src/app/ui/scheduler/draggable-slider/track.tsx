@@ -22,12 +22,11 @@ const Track: React.FC<{
   const duration = props.endHour >= props.startHour ? props.endHour - props.startHour : 0;
   const availableHours = new Array(duration).fill(0).map((_, i) => props.startHour + i);
   const container = useRef<HTMLDivElement>(null);
-  const initialized = useRef(false);
 
-  const [containerX, setContainerX] = useState(0);
-  const [containerY, setContainerY] = useState(0);
-  const [gridsPerRow, setGridsPerRow] = useState(0);
-  const [rows, setRows] = useState(1);
+  const containerXRef = useRef(0);
+  const containerYRef = useRef(0);
+  const gridsPerRowRef = useRef(0);
+  const rowCountRef = useRef(1);
 
   const [isDragging, setIsDragging] = useState(false);
   const [dropHighlightStart, setDropHighlightStart] = useState(0);
@@ -68,7 +67,7 @@ const Track: React.FC<{
     return output;
   };
 
-  const change = () => {
+  const changed = () => {
     if (dropHighlightStartRef.current || dropHighlightStartRef.current) {
       const start = alignValue(dropHighlightStartRef.current);
       const end = alignValue(dropHighlightEndRef.current);
@@ -89,36 +88,20 @@ const Track: React.FC<{
 
   const calcValWithPageXY = (x: number, y: number, contX: number, contY: number) => {
     let rowIndex = 0;
-    for (; rowIndex < rows; rowIndex++) {
+    for (; rowIndex < rowCountRef.current; rowIndex++) {
       if (y < contY + (rowIndex + 1) * TRACK_LINE_HEIGHT) break;
     }
-    return (x - contX) / (GRID_WIDTH - 1) + rowIndex * gridsPerRow;
+    return (x - contX) / (GRID_WIDTH - 1) + rowIndex * gridsPerRowRef.current + props.startHour;
   };
 
-  useEffect(() => {
-    const handler = () => {
-      // TODO reduce calc times when resizing
-      setContainerX(getElPageX(container.current));
-      setContainerY(getElPageY(container.current));
-      const gridsPerRow = Math.floor((container.current?.offsetWidth || 0) / (GRID_WIDTH - 1));
-      setGridsPerRow(gridsPerRow);
-      setRows(Math.ceil(availableHours.length / gridsPerRow));
-    };
-    // compatible for react strict mode
-    if (!initialized.current && container.current) {
-      window.addEventListener('resize', handler);
-      handler();
-      initialized.current = true;
-    }
-
-    return () => {
-      // compatible for react strict mode
-      if (initialized.current) {
-        window.removeEventListener('resize', handler);
-        initialized.current = false;
-      }
-    };
-  }, [availableHours.length]);
+  // window RESIZING effect resolving
+  const layoutParamInit = () => {
+    // TODO reduce calc times when resizing
+    containerXRef.current = getElPageX(container.current);
+    containerYRef.current = getElPageY(container.current);
+    gridsPerRowRef.current = Math.floor((container.current?.offsetWidth || 0) / (GRID_WIDTH - 1));
+    rowCountRef.current = Math.ceil(availableHours.length / gridsPerRowRef.current);
+  };
 
   return (
     <div className="p-4">
@@ -137,14 +120,14 @@ const Track: React.FC<{
               dropHighlightStart={dropHighlightStart}
               dropHighlightEnd={dropHighlightEnd}
               updateStartVal={(x: number, y: number) => {
-                updateStartVal(calcValWithPageXY(x, y, containerX, containerY));
+                updateStartVal(calcValWithPageXY(x, y, containerXRef.current, containerYRef.current));
               }}
               updateEndVal={(x: number, y: number) => {
-                updateEndVal(calcValWithPageXY(x, y, containerX, containerY));
+                updateEndVal(calcValWithPageXY(x, y, containerXRef.current, containerYRef.current));
               }}
               updateDropHighlight={(x: number, y: number) => {
                 setIsDragging(true);
-                const v = calcValWithPageXY(x, y, containerX, containerY);
+                const v = calcValWithPageXY(x, y, containerXRef.current, containerYRef.current);
                 if (v === null) {
                   updateHighlightStart(0);
                   updateHighlightEnd(0);
@@ -154,7 +137,10 @@ const Track: React.FC<{
                   updateHighlightEnd(v - startValue + endValue);
                 }
               }}
-              change={change}
+              changeStart={() => {
+                layoutParamInit();
+              }}
+              changed={changed}
             />
 
             <HourLabel pos={'left'} hour={hour} />
@@ -177,11 +163,19 @@ const Track: React.FC<{
   );
 };
 
+function getElPageY(el: HTMLElement | null): number {
+  function getPageY(el: HTMLElement | null): number {
+    return el ? el.offsetTop + getElPageY(el.offsetParent as HTMLElement) : 0;
+  }
+  function getAccumulateScrollOffset(el: HTMLElement | null): number {
+    return el ? getAccumulateScrollOffset(el.parentElement as HTMLElement) - el.scrollTop : 0;
+  }
+  return getPageY(el) + getAccumulateScrollOffset(el);
+}
+
+// TODO if scroll-x exist we should calc like getElPageY too
 function getElPageX(el: HTMLElement | null): number {
   return el ? el.offsetLeft + getElPageX(el.offsetParent as HTMLElement) : 0;
-}
-function getElPageY(el: HTMLElement | null): number {
-  return el ? el.offsetTop + getElPageY(el.offsetParent as HTMLElement) : 0;
 }
 
 export default Track;

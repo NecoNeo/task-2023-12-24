@@ -2,11 +2,19 @@ import React from 'react';
 import Image from 'next/image';
 import DraggableSlider from './draggable-slider/draggable-slider';
 
+/**
+ * Parent scheduler component which contains a draggable slider implemented
+ */
 const ScheduleItem: React.FC<{
+  /** display name of the schedule item */
   slotName: string;
+  /** int value setting start hour of the track */
   startHour: number;
+  /** int value setting end hour of the track */
   endHour: number;
+  /** user picked range start */
   startValue: number;
+  /** user picked range end */
   endValue: number;
   onChange?: (startValue: number, endValue: number) => void;
 }> = (props) => {

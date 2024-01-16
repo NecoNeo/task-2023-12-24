@@ -6,7 +6,8 @@ const CtrlPoint: React.FC<{
   type: 'left' | 'right';
   pos: number;
   updateVal: (x: number, y: number) => void;
-  change: () => void;
+  changeStart: () => void;
+  changed: () => void;
 }> = (props) => {
   const container = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
@@ -14,6 +15,7 @@ const CtrlPoint: React.FC<{
   useEffect(() => {
     const dragStartHandler = (ev: MouseEvent) => {
       ev.stopPropagation();
+      props.changeStart();
 
       const dragMoveHandler = (ev: MouseEvent) => {
         if (ev.pageX || ev.pageY) {
@@ -23,7 +25,7 @@ const CtrlPoint: React.FC<{
         }
       };
       const dragEndHandler = () => {
-        props.change();
+        props.changed();
         window.removeEventListener('mousemove', dragMoveHandler);
         window.removeEventListener('mouseup', dragEndHandler);
       };

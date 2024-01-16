@@ -6,25 +6,38 @@ import Track from './track';
  *
  * a draggable interactive component design which display a track of period
  */
-const DraggableSlider: React.FC = () => {
-  const startHour = 0;
-  const endHour = 23;
-
-  const [startValue, setStartValue] = useState(5);
-  const [endValue, setEndValue] = useState(8);
+const DraggableSlider: React.FC<{
+  startHour: number;
+  endHour: number;
+  startValue: number;
+  endValue: number;
+  onChange?: (startValue: number, endValue: number) => void;
+}> = (props) => {
+  const [startValue, setStartValue] = useState(props.startValue);
+  const [endValue, setEndValue] = useState(props.endValue);
 
   useEffect(() => {
-    // DO NOTHING
-  });
+    setStartValue(props.startValue);
+    setEndValue(props.endValue);
+  }, [props.startHour, props.endHour, props.startValue, props.endValue]);
 
   const valueChange = (start: number, end: number) => {
     setStartValue(start);
     setEndValue(end);
+    if (props.onChange) {
+      props.onChange(start, end);
+    }
   };
 
   return (
     <div>
-      <Track startHour={startHour} endHour={endHour} startValue={startValue} endValue={endValue} change={valueChange} />
+      <Track
+        startHour={props.startHour}
+        endHour={props.endHour}
+        startValue={startValue}
+        endValue={endValue}
+        change={valueChange}
+      />
     </div>
   );
 };

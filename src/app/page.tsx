@@ -1,11 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import AttrForm from './ui/attr-form/attr-form';
 import ScheduleItem from './ui/scheduler/schedule-item';
 // import Image from 'next/image';
 
 const Home: React.FC = () => {
+  const [startHour, setStartHour] = useState(3);
+  const [endHour, setEndHour] = useState(23);
+
+  const [scheduleItems, setScheduleItems] = useState([
+    { startValue: 3, endValue: 6, name: 'ALPHA' },
+    { startValue: 5, endValue: 8, name: 'BETA' },
+    { startValue: 0, endValue: 0, name: 'GAMMA' },
+    { startValue: 0, endValue: 0, name: 'DELTA' },
+  ]);
   return (
     <div className="flex h-full overflow-auto">
       <div className="flex flex-col flex-1 overflow-auto">
@@ -14,13 +23,34 @@ const Home: React.FC = () => {
           <br />
         </div>
         <div className="flex-1 bg-white h-full overflow-auto">
-          {new Array(4).fill(0).map((_, i) => (
-            <ScheduleItem key={i} slotName={String(i)} />
+          {scheduleItems.map((attrs, i) => (
+            <ScheduleItem
+              key={i}
+              slotName={attrs.name}
+              startHour={startHour}
+              endHour={endHour}
+              startValue={attrs.startValue}
+              endValue={attrs.endValue}
+              onChange={(start: number, end: number) => {
+                const shallowCopy = [...scheduleItems];
+                shallowCopy[i].startValue = start;
+                shallowCopy[i].endValue = end;
+                setScheduleItems([...shallowCopy]);
+              }}
+            />
           ))}
         </div>
       </div>
       <div className="w-80 h-full border-solid border border-gray-100">
-        <AttrForm />
+        <AttrForm
+          startHour={startHour}
+          endHour={endHour}
+          scheduleItems={scheduleItems}
+          onChange={(s, e) => {
+            setStartHour(s);
+            setEndHour(e);
+          }}
+        />
       </div>
     </div>
   );

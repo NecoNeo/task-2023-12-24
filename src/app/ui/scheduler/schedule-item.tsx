@@ -2,7 +2,14 @@ import React from 'react';
 import Image from 'next/image';
 import DraggableSlider from './draggable-slider/draggable-slider';
 
-const ScheduleItem: React.FC<{ slotName: string }> = (props) => {
+const ScheduleItem: React.FC<{
+  slotName: string;
+  startHour: number;
+  endHour: number;
+  startValue: number;
+  endValue: number;
+  onChange?: (startValue: number, endValue: number) => void;
+}> = (props) => {
   return (
     <div className="m-2 border border-solid border-gray-100 bg-white">
       <div className="py-2 bg-gray-50">
@@ -23,7 +30,13 @@ const ScheduleItem: React.FC<{ slotName: string }> = (props) => {
           />
         </div>
         <div className="flex-1 select-none">
-          <DraggableSlider />
+          <DraggableSlider
+            startHour={props.startHour}
+            endHour={props.endHour}
+            startValue={props.startValue}
+            endValue={props.endValue}
+            onChange={props.onChange}
+          />
         </div>
       </div>
     </div>

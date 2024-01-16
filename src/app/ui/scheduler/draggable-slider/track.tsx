@@ -44,7 +44,7 @@ const Track: React.FC<{
 
   const [startValue, setStartValue] = useState(props.startValue);
   const [endValue, setEndValue] = useState(props.endValue);
-  const startValueRef = useRef(props.startValue);
+  const startValueRef = useRef(props.startValue); // TODO these pair values not properly cleaned, but seems doesn't matter
   const endValueRef = useRef(props.endValue);
   const updateStartVal = (v: number) => {
     setStartValue(v);
@@ -65,6 +65,15 @@ const Track: React.FC<{
     if (output < props.startHour) output = props.startHour;
     if (output > props.endHour) output = props.endHour;
     return output;
+  };
+
+  const initVal = (sv: number) => {
+    if (startValue === 0 && endValue === 0) {
+      const ev = sv + 0.5;
+      setStartValue(sv);
+      setEndValue(ev);
+      props.change(sv, ev);
+    }
   };
 
   const changed = () => {
@@ -120,10 +129,12 @@ const Track: React.FC<{
               dropHighlightStart={dropHighlightStart}
               dropHighlightEnd={dropHighlightEnd}
               updateStartVal={(x: number, y: number) => {
-                updateStartVal(calcValWithPageXY(x, y, containerXRef.current, containerYRef.current));
+                const targetStart = calcValWithPageXY(x, y, containerXRef.current, containerYRef.current);
+                if (targetStart + 0.5 <= endValue) updateStartVal(targetStart);
               }}
               updateEndVal={(x: number, y: number) => {
-                updateEndVal(calcValWithPageXY(x, y, containerXRef.current, containerYRef.current));
+                const targetEnd = calcValWithPageXY(x, y, containerXRef.current, containerYRef.current);
+                if (targetEnd - 0.5 >= startValue) updateEndVal(targetEnd);
               }}
               updateDropHighlight={(x: number, y: number) => {
                 setIsDragging(true);
@@ -150,11 +161,17 @@ const Track: React.FC<{
               className={`absolute top-0 inline-block w-[50%] h-[100%] ${
                 hour < 19 ? 'bg-gray-50' : ''
               } hover:bg-red-300 hover:z-20`}
+              onClick={() => {
+                initVal(hour);
+              }}
             ></div>
             <div
               className={`absolute top-0 left-[50%] inline-block w-[50%] h-[100%] ${
                 hour < 18 ? 'bg-gray-50' : ''
               } hover:bg-red-300 hover:z-20`}
+              onClick={() => {
+                initVal(hour + 0.5);
+              }}
             ></div>
           </div>
         ))}

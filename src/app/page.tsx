@@ -15,6 +15,15 @@ const Home: React.FC = () => {
     { startValue: 0, endValue: 0, name: 'GAMMA' },
     { startValue: 0, endValue: 0, name: 'DELTA' },
   ]);
+
+  const cleanAll = () => {
+    const shallowCopy = scheduleItems.map((e) => {
+      e.startValue = 0;
+      e.endValue = 0;
+      return e;
+    });
+    setScheduleItems(shallowCopy);
+  };
   return (
     <div className="flex h-full overflow-auto">
       <div className="flex flex-col flex-1 overflow-auto">
@@ -35,7 +44,7 @@ const Home: React.FC = () => {
                 const shallowCopy = [...scheduleItems];
                 shallowCopy[i].startValue = start;
                 shallowCopy[i].endValue = end;
-                setScheduleItems([...shallowCopy]);
+                setScheduleItems(shallowCopy);
               }}
             />
           ))}
@@ -50,7 +59,14 @@ const Home: React.FC = () => {
             setStartHour(s);
             setEndHour(e);
           }}
-        />
+        >
+          <button
+            onClick={cleanAll}
+            className="pt-0.5 pb-0.5 pl-3 pr-3 text-white text-sm bg-red-600 hover:bg-red-400 rounded-sm"
+          >
+            CLEAN ALL
+          </button>
+        </AttrForm>
       </div>
     </div>
   );

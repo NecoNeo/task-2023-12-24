@@ -12,7 +12,13 @@ const HourLabel: React.FC<{ pos: 'left' | 'right'; hour: number }> = (props) => 
 };
 
 /** container track for hours */
-const Track: React.FC<{ startHour: number; endHour: number; startValue: number; endValue: number }> = (props) => {
+const Track: React.FC<{
+  startHour: number;
+  endHour: number;
+  startValue: number;
+  endValue: number;
+  change: (start: number, end: number) => void;
+}> = (props) => {
   const duration = props.endHour >= props.startHour ? props.endHour - props.startHour : 0;
   const availableHours = new Array(duration).fill(0).map((_, i) => props.startHour + i);
   const container = useRef<HTMLDivElement>(null);
@@ -28,22 +34,57 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
   const [dropHighlightEnd, setDropHighlightEnd] = useState(0);
   const dropHighlightStartRef = useRef(0);
   const dropHighlightEndRef = useRef(0);
+  const updateHighlightStart = (v: number) => {
+    setDropHighlightStart(v);
+    dropHighlightStartRef.current = v;
+  };
+  const updateHighlightEnd = (v: number) => {
+    setDropHighlightEnd(v);
+    dropHighlightEndRef.current = v;
+  };
 
   const [startValue, setStartValue] = useState(props.startValue);
   const [endValue, setEndValue] = useState(props.endValue);
+  const startValueRef = useRef(props.startValue);
+  const endValueRef = useRef(props.endValue);
+  const updateStartVal = (v: number) => {
+    setStartValue(v);
+    startValueRef.current = v;
+  };
+  const updateEndVal = (v: number) => {
+    setEndValue(v);
+    endValueRef.current = v;
+  };
+
+  useEffect(() => {
+    updateStartVal(props.startValue);
+    updateEndVal(props.endValue);
+  }, [props.startValue, props.endValue]);
+
+  const alignValue = (v: number) => {
+    let output = Math.round(v * 2) / 2;
+    if (output < props.startHour) output = props.startHour;
+    if (output > props.endHour) output = props.endHour;
+    return output;
+  };
 
   const change = () => {
     if (dropHighlightStartRef.current || dropHighlightStartRef.current) {
-      setStartValue(dropHighlightStartRef.current);
-      setEndValue(dropHighlightEndRef.current);
+      const start = alignValue(dropHighlightStartRef.current);
+      const end = alignValue(dropHighlightEndRef.current);
+      setStartValue(start);
+      setEndValue(end);
       dropHighlightStartRef.current = 0;
       dropHighlightEndRef.current = 0;
+      props.change(start, end);
     } else {
-      //
+      const start = alignValue(startValueRef.current);
+      const end = alignValue(endValueRef.current);
+      setStartValue(start);
+      setEndValue(end);
+      props.change(start, end);
     }
-
     setIsDragging(false);
-    // TODO emit change event
   };
 
   const calcValWithPageXY = (x: number, y: number, contX: number, contY: number) => {
@@ -53,15 +94,6 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
     }
     return (x - contX) / (GRID_WIDTH - 1) + rowIndex * gridsPerRow;
   };
-  // input x,y must be totally fit in container box
-  // const calcValWithPageXYStrict = (x: number, y: number, contX: number, contY: number) => {
-  //   let rowIndex = -1;
-  //   for (; rowIndex <= rows; rowIndex++) {
-  //     if (y < contY + (rowIndex + 1) * TRACK_LINE_HEIGHT) break;
-  //   }
-  //   if (rowIndex < 0 || rowIndex >= rows) return null;
-  //   return (x - contX) / (GRID_WIDTH - 1) + rowIndex * gridsPerRow;
-  // };
 
   useEffect(() => {
     const handler = () => {
@@ -105,27 +137,21 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
               dropHighlightStart={dropHighlightStart}
               dropHighlightEnd={dropHighlightEnd}
               updateStartVal={(x: number, y: number) => {
-                if (!containerX && !containerY) return; // 0 value also caused by REACT.STRICT mode in CtrlPoint component
-                setStartValue(calcValWithPageXY(x, y, containerX, containerY));
+                updateStartVal(calcValWithPageXY(x, y, containerX, containerY));
               }}
               updateEndVal={(x: number, y: number) => {
-                if (!containerX && !containerY) return; // 0 value also caused by REACT.STRICT mode in CtrlPoint component
-                setEndValue(calcValWithPageXY(x, y, containerX, containerY));
+                updateEndVal(calcValWithPageXY(x, y, containerX, containerY));
               }}
               updateDropHighlight={(x: number, y: number) => {
                 setIsDragging(true);
                 const v = calcValWithPageXY(x, y, containerX, containerY);
                 if (v === null) {
-                  setDropHighlightStart(0);
-                  setDropHighlightEnd(0);
-                  dropHighlightStartRef.current = 0;
-                  dropHighlightEndRef.current = 0;
+                  updateHighlightStart(0);
+                  updateHighlightEnd(0);
                 } else {
-                  const ve = v - startValue + endValue; // TODO calc value cache
-                  setDropHighlightStart(v);
-                  setDropHighlightEnd(ve);
-                  dropHighlightStartRef.current = v;
-                  dropHighlightEndRef.current = ve;
+                  // TODO calc value cache
+                  updateHighlightStart(v);
+                  updateHighlightEnd(v - startValue + endValue);
                 }
               }}
               change={change}

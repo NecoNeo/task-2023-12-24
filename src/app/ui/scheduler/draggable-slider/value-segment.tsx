@@ -46,8 +46,8 @@ const ValueSegment: React.FC<{
         window.removeEventListener('mousemove', dragMove);
         window.removeEventListener('mouseup', dragEnd);
       };
-      window?.addEventListener('mousemove', dragMove);
-      window?.addEventListener('mouseup', dragEnd);
+      window.addEventListener('mousemove', dragMove);
+      window.addEventListener('mouseup', dragEnd);
     };
 
     // compatible for react strict mode
@@ -69,10 +69,10 @@ const ValueSegment: React.FC<{
   return (
     <div className="absolute top-0 left-[-1px] h-full w-12" ref={container}>
       {showLeftCtrlPoint && !props.isDragging ? (
-        <CtrlPoint type="left" pos={start - hourStart} updateVal={props.updateStartVal} />
+        <CtrlPoint type="left" pos={start - hourStart} updateVal={props.updateStartVal} change={props.change} />
       ) : null}
       {showRightCtrlPoint && !props.isDragging ? (
-        <CtrlPoint type="right" pos={end - hourStart} updateVal={props.updateEndVal} />
+        <CtrlPoint type="right" pos={end - hourStart} updateVal={props.updateEndVal} change={props.change} />
       ) : null}
       {props.isDragging ? null : (
         <div

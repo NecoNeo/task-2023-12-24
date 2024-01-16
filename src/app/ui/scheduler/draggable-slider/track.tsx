@@ -1,98 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useAnimationFrame } from '../animation';
 import { TRACK_LINE_HEIGHT, GRID_WIDTH, GRID_HEIGHT } from '../config';
+import { ValueSegment } from './value-segment';
 
 const HourLabel: React.FC<{ pos: 'left' | 'right'; hour: number }> = (props) => {
   const offset = props.pos === 'left' ? 'left-[-1.25rem]' : 'right-[-1.25rem]';
   return (
     <div className={`absolute -top-4 ${offset} w-10 bg-white text-xs text-center`} style={{ transform: 'scale(0.8)' }}>
       {props.hour}:00
-    </div>
-  );
-};
-
-/** highlighting activated hours */
-const ValueSegment: React.FC<{
-  hour: number;
-  startValue: number;
-  endValue: number;
-  updateStartVal: (x: number, y: number) => void;
-  updateEndVal: (x: number, y: number) => void;
-}> = (props) => {
-  const start = props.startValue;
-  const end = props.endValue;
-  const hourStart = props.hour;
-  const hourEnd = props.hour + 1;
-
-  const segmentStart = Math.max(start, hourStart);
-  const segmentEnd = Math.min(end, hourEnd);
-  const w = segmentEnd - segmentStart < 0 ? 0 : segmentEnd - segmentStart;
-  const l = segmentStart - hourStart < 0 ? 0 : segmentStart - hourStart;
-  const showLeftCtrlPoint = segmentStart === start && w > 0;
-  const showRightCtrlPoint = segmentEnd === end && w > 0;
-
-  return (
-    <div className="absolute top-0 left-[-1px] h-full w-12">
-      {showLeftCtrlPoint ? <CtrlPoint type="left" pos={start - hourStart} updateVal={props.updateStartVal} /> : null}
-      {showRightCtrlPoint ? <CtrlPoint type="right" pos={end - hourStart} updateVal={props.updateEndVal} /> : null}
-      <div
-        className="absolute z-30 top-0 h-full bg-red-500"
-        style={{ left: `${l * 100}%`, width: `${w * 100}%` }}
-      ></div>
-    </div>
-  );
-};
-
-/** control points for resizing value range */
-const CtrlPoint: React.FC<{ type: 'left' | 'right'; pos: number; updateVal: (x: number, y: number) => void }> = (
-  props,
-) => {
-  const container = useRef<HTMLDivElement>(null);
-  const initialized = useRef(false);
-
-  const nextFrame = useAnimationFrame();
-
-  useEffect(() => {
-    const dragHandler = (ev: DragEvent) => {
-      // console.log('drag', ev.pageX, ev.pageY);
-      if (ev.pageX || ev.pageY) {
-        nextFrame(() => {
-          props.updateVal(ev.pageX, ev.pageY);
-        });
-      }
-    };
-
-    // compatible for react strict mode
-    if (!initialized.current) {
-      container.current?.addEventListener('drag', dragHandler);
-      initialized.current = true;
-
-      return () => {
-        // compatible for react strict mode
-        if (initialized.current) {
-          initialized.current = false;
-        }
-      };
-    }
-  });
-
-  return (
-    <div
-      className="absolute z-50"
-      ref={container}
-      style={{ width: '24px', height: '24px', top: '12px', left: `calc(${props.pos * 100}% - 12px)` }}
-      draggable
-    >
-      <div
-        className="absolute z-40 border-2 border-solid border-red-600 bg-white"
-        style={{
-          top: '7px',
-          left: '7px',
-          width: '10px',
-          height: '10px',
-          borderRadius: '5px',
-        }}
-      ></div>
     </div>
   );
 };

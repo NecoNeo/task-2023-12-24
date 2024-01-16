@@ -1,14 +1,19 @@
 import React, { useEffect, useRef } from 'react';
 import { CtrlPoint } from './ctrl-point';
-import { GRID_HEIGHT } from '../config';
+import { GRID_HEIGHT, GRID_WIDTH } from '../config';
 
 /** highlighting activated hours */
 const ValueSegment: React.FC<{
   hour: number;
   startValue: number;
   endValue: number;
+  isDragging: boolean;
+  dropHighlightStart: number;
+  dropHighlightEnd: number;
   updateStartVal: (x: number, y: number) => void;
   updateEndVal: (x: number, y: number) => void;
+  updateDropHighlight: (x: number, y: number) => void;
+  change: () => void;
 }> = (props) => {
   const start = props.startValue;
   const end = props.endValue;
@@ -25,28 +30,18 @@ const ValueSegment: React.FC<{
   const container = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
   useEffect(() => {
-    const dragHandler = (ev: MouseEvent) => {
-      props.updateStartVal(0, 0);
-      props.updateEndVal(0, 0);
-      console.log('drag seg', ev);
-      const el = document.createElement('div');
-      el.style.height = `${GRID_HEIGHT}px`;
-      el.style.width = '60px';
-      el.style.backgroundColor = 'rgb(239 68 68)';
-      el.style.position = 'absolute';
-      el.style.zIndex = '10000';
-      el.style.top = '-1000px';
-      el.style.left = '0';
+    const dragStartHandler = () => {
+      const el = createDragTargetEl(GRID_WIDTH * (props.endValue - props.startValue));
       document.body.appendChild(el);
 
       const dragMove = (ev: MouseEvent) => {
-        // console.log('drag move', ev);
+        props.updateDropHighlight(ev.pageX, ev.pageY);
         el.style.top = `${ev.pageY}px`;
         el.style.left = `${ev.pageX}px`;
       };
-
       const dragOver = (ev: MouseEvent) => {
-        console.log('drag seg over', ev.pageX, ev.pageY);
+        props.updateDropHighlight(ev.pageX, ev.pageY);
+        props.change();
         document.body.removeChild(el);
         window.removeEventListener('mousemove', dragMove);
         window.removeEventListener('mouseup', dragOver);
@@ -58,13 +53,13 @@ const ValueSegment: React.FC<{
     // compatible for react strict mode
     if (!initialized.current) {
       const containerEl = container.current;
-      containerEl?.addEventListener('mousedown', dragHandler);
+      containerEl?.addEventListener('mousedown', dragStartHandler);
       initialized.current = true;
 
       return () => {
         // compatible for react strict mode
         if (initialized.current) {
-          if (containerEl) containerEl.removeEventListener('mousedown', dragHandler);
+          if (containerEl) containerEl.removeEventListener('mousedown', dragStartHandler);
           initialized.current = false;
         }
       };
@@ -73,14 +68,40 @@ const ValueSegment: React.FC<{
 
   return (
     <div className="absolute top-0 left-[-1px] h-full w-12" ref={container}>
-      {showLeftCtrlPoint ? <CtrlPoint type="left" pos={start - hourStart} updateVal={props.updateStartVal} /> : null}
-      {showRightCtrlPoint ? <CtrlPoint type="right" pos={end - hourStart} updateVal={props.updateEndVal} /> : null}
-      <div
-        className="absolute z-30 top-0 h-full bg-red-500"
-        style={{ left: `${l * 100}%`, width: `${w * 100}%` }}
-      ></div>
+      {showLeftCtrlPoint && !props.isDragging ? (
+        <CtrlPoint type="left" pos={start - hourStart} updateVal={props.updateStartVal} />
+      ) : null}
+      {showRightCtrlPoint && !props.isDragging ? (
+        <CtrlPoint type="right" pos={end - hourStart} updateVal={props.updateEndVal} />
+      ) : null}
+      {props.isDragging ? null : (
+        <div
+          className="absolute z-30 top-0 h-full bg-red-500"
+          style={{ left: `${l * 100}%`, width: `${w * 100}%` }}
+        ></div>
+      )}
+
+      {/* handle drop feature target area highlight */}
+      {props.isDragging && hourStart >= props.dropHighlightStart && hourStart <= props.dropHighlightEnd ? (
+        <div className="absolute z-20 top-0 left-0 h-full bg-red-300" style={{ width: '50%' }}></div>
+      ) : null}
+      {props.isDragging && hourStart + 0.5 >= props.dropHighlightStart && hourStart + 0.5 <= props.dropHighlightEnd ? (
+        <div className="absolute z-20 top-0 left-[50%] h-full bg-red-300" style={{ width: '50%' }}></div>
+      ) : null}
     </div>
   );
 };
+
+function createDragTargetEl(width: number): HTMLDivElement {
+  const el = document.createElement('div');
+  el.style.height = `${GRID_HEIGHT}px`;
+  el.style.width = `${width}px`;
+  el.style.backgroundColor = 'rgb(239 68 68)';
+  el.style.position = 'absolute';
+  el.style.zIndex = '10000';
+  el.style.top = '-1000px';
+  el.style.left = '0';
+  return el;
+}
 
 export { ValueSegment };

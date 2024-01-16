@@ -11,13 +11,6 @@ const HourLabel: React.FC<{ pos: 'left' | 'right'; hour: number }> = (props) => 
   );
 };
 
-function getElPageX(el: HTMLElement | null): number {
-  return el ? el.offsetLeft + getElPageX(el.offsetParent as HTMLElement) : 0;
-}
-function getElPageY(el: HTMLElement | null): number {
-  return el ? el.offsetTop + getElPageY(el.offsetParent as HTMLElement) : 0;
-}
-
 /** container track for hours */
 const Track: React.FC<{ startHour: number; endHour: number; startValue: number; endValue: number }> = (props) => {
   const duration = props.endHour >= props.startHour ? props.endHour - props.startHour : 0;
@@ -30,32 +23,42 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
   const [gridsPerRow, setGridsPerRow] = useState(0);
   const [rows, setRows] = useState(1);
 
+  const [isDragging, setIsDragging] = useState(false);
+  const [dropHighlightStart, setDropHighlightStart] = useState<number>(0);
+  const [dropHighlightEnd, setDropHighlightEnd] = useState<number>(0);
+
   const [startValue, setStartValue] = useState(props.startValue);
   const [endValue, setEndValue] = useState(props.endValue);
+
+  const change = () => {
+    setDropHighlightStart(0);
+    setDropHighlightEnd(0);
+    setIsDragging(false);
+    // TODO emit change event
+  };
 
   const calcValWithPageXY = (x: number, y: number, contX: number, contY: number) => {
     let rowIndex = 0;
     for (; rowIndex < rows; rowIndex++) {
-      if (y < contY + (rowIndex + 1) * TRACK_LINE_HEIGHT) {
-        break;
-      }
+      if (y < contY + (rowIndex + 1) * TRACK_LINE_HEIGHT) break;
     }
+    return (x - contX) / (GRID_WIDTH - 1) + rowIndex * gridsPerRow;
+  };
+  // input x,y must be totally fit in container box
+  const calcValWithPageXYStrict = (x: number, y: number, contX: number, contY: number) => {
+    let rowIndex = -1;
+    for (; rowIndex <= rows; rowIndex++) {
+      if (y < contY + (rowIndex + 1) * TRACK_LINE_HEIGHT) break;
+    }
+    if (rowIndex < 0 || rowIndex >= rows) return null;
     return (x - contX) / (GRID_WIDTH - 1) + rowIndex * gridsPerRow;
   };
 
   useEffect(() => {
-    // window.addEventListener('mousemove', (ev) => {
-    //   console.log(ev.pageX);
-    // });
-
     const handler = () => {
       // TODO reduce calc times when resizing
-      // console.log('resizing');
-      // console.log('left', getElPageLeft(container.current));
-      // console.log('width', container.current?.offsetWidth);
       setContainerX(getElPageX(container.current));
       setContainerY(getElPageY(container.current));
-
       const gridsPerRow = Math.floor((container.current?.offsetWidth || 0) / (GRID_WIDTH - 1));
       setGridsPerRow(gridsPerRow);
       setRows(Math.ceil(availableHours.length / gridsPerRow));
@@ -89,6 +92,9 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
               hour={hour}
               startValue={startValue}
               endValue={endValue}
+              isDragging={isDragging}
+              dropHighlightStart={dropHighlightStart}
+              dropHighlightEnd={dropHighlightEnd}
               updateStartVal={(x: number, y: number) => {
                 if (!containerX && !containerY) return; // 0 value also caused by REACT.STRICT mode in CtrlPoint component
                 setStartValue(calcValWithPageXY(x, y, containerX, containerY));
@@ -97,6 +103,18 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
                 if (!containerX && !containerY) return; // 0 value also caused by REACT.STRICT mode in CtrlPoint component
                 setEndValue(calcValWithPageXY(x, y, containerX, containerY));
               }}
+              updateDropHighlight={(x: number, y: number) => {
+                setIsDragging(true);
+                const v = calcValWithPageXYStrict(x, y, containerX, containerY);
+                if (v === null) {
+                  setDropHighlightStart(0);
+                  setDropHighlightEnd(0);
+                } else {
+                  setDropHighlightStart(v);
+                  setDropHighlightEnd(v - startValue + endValue); // TODO calc value cache
+                }
+              }}
+              change={change}
             />
 
             <HourLabel pos={'left'} hour={hour} />
@@ -118,5 +136,12 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
     </div>
   );
 };
+
+function getElPageX(el: HTMLElement | null): number {
+  return el ? el.offsetLeft + getElPageX(el.offsetParent as HTMLElement) : 0;
+}
+function getElPageY(el: HTMLElement | null): number {
+  return el ? el.offsetTop + getElPageY(el.offsetParent as HTMLElement) : 0;
+}
 
 export default Track;

@@ -10,7 +10,6 @@ const CtrlPoint: React.FC<{ type: 'left' | 'right'; pos: number; updateVal: (x: 
   const nextFrame = useAnimationFrame();
   useEffect(() => {
     const dragHandler = (ev: DragEvent) => {
-      // console.log('drag', ev.pageX, ev.pageY);
       if (ev.pageX || ev.pageY) {
         nextFrame(() => {
           props.updateVal(ev.pageX, ev.pageY);

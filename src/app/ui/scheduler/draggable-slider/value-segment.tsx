@@ -39,15 +39,15 @@ const ValueSegment: React.FC<{
         el.style.top = `${ev.pageY}px`;
         el.style.left = `${ev.pageX}px`;
       };
-      const dragOver = (ev: MouseEvent) => {
+      const dragEnd = (ev: MouseEvent) => {
         props.updateDropHighlight(ev.pageX, ev.pageY);
         props.change();
         document.body.removeChild(el);
         window.removeEventListener('mousemove', dragMove);
-        window.removeEventListener('mouseup', dragOver);
+        window.removeEventListener('mouseup', dragEnd);
       };
-      window?.addEventListener('mouseup', dragOver);
       window?.addEventListener('mousemove', dragMove);
+      window?.addEventListener('mouseup', dragEnd);
     };
 
     // compatible for react strict mode

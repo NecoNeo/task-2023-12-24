@@ -24,15 +24,24 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
   const [rows, setRows] = useState(1);
 
   const [isDragging, setIsDragging] = useState(false);
-  const [dropHighlightStart, setDropHighlightStart] = useState<number>(0);
-  const [dropHighlightEnd, setDropHighlightEnd] = useState<number>(0);
+  const [dropHighlightStart, setDropHighlightStart] = useState(0);
+  const [dropHighlightEnd, setDropHighlightEnd] = useState(0);
+  const dropHighlightStartRef = useRef(0);
+  const dropHighlightEndRef = useRef(0);
 
   const [startValue, setStartValue] = useState(props.startValue);
   const [endValue, setEndValue] = useState(props.endValue);
 
   const change = () => {
-    setDropHighlightStart(0);
-    setDropHighlightEnd(0);
+    if (dropHighlightStartRef.current || dropHighlightStartRef.current) {
+      setStartValue(dropHighlightStartRef.current);
+      setEndValue(dropHighlightEndRef.current);
+      dropHighlightStartRef.current = 0;
+      dropHighlightEndRef.current = 0;
+    } else {
+      //
+    }
+
     setIsDragging(false);
     // TODO emit change event
   };
@@ -45,14 +54,14 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
     return (x - contX) / (GRID_WIDTH - 1) + rowIndex * gridsPerRow;
   };
   // input x,y must be totally fit in container box
-  const calcValWithPageXYStrict = (x: number, y: number, contX: number, contY: number) => {
-    let rowIndex = -1;
-    for (; rowIndex <= rows; rowIndex++) {
-      if (y < contY + (rowIndex + 1) * TRACK_LINE_HEIGHT) break;
-    }
-    if (rowIndex < 0 || rowIndex >= rows) return null;
-    return (x - contX) / (GRID_WIDTH - 1) + rowIndex * gridsPerRow;
-  };
+  // const calcValWithPageXYStrict = (x: number, y: number, contX: number, contY: number) => {
+  //   let rowIndex = -1;
+  //   for (; rowIndex <= rows; rowIndex++) {
+  //     if (y < contY + (rowIndex + 1) * TRACK_LINE_HEIGHT) break;
+  //   }
+  //   if (rowIndex < 0 || rowIndex >= rows) return null;
+  //   return (x - contX) / (GRID_WIDTH - 1) + rowIndex * gridsPerRow;
+  // };
 
   useEffect(() => {
     const handler = () => {
@@ -105,13 +114,18 @@ const Track: React.FC<{ startHour: number; endHour: number; startValue: number; 
               }}
               updateDropHighlight={(x: number, y: number) => {
                 setIsDragging(true);
-                const v = calcValWithPageXYStrict(x, y, containerX, containerY);
+                const v = calcValWithPageXY(x, y, containerX, containerY);
                 if (v === null) {
                   setDropHighlightStart(0);
                   setDropHighlightEnd(0);
+                  dropHighlightStartRef.current = 0;
+                  dropHighlightEndRef.current = 0;
                 } else {
+                  const ve = v - startValue + endValue; // TODO calc value cache
                   setDropHighlightStart(v);
-                  setDropHighlightEnd(v - startValue + endValue); // TODO calc value cache
+                  setDropHighlightEnd(ve);
+                  dropHighlightStartRef.current = v;
+                  dropHighlightEndRef.current = ve;
                 }
               }}
               change={change}

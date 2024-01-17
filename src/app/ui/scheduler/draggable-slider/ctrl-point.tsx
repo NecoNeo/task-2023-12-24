@@ -51,7 +51,7 @@ const CtrlPoint: React.FC<{
 
   return (
     <div
-      className="absolute z-50 cursor-e-resize"
+      className="absolute z-50 cursor-ew-resize"
       ref={container}
       style={{ width: '24px', height: '24px', top: '12px', left: `calc(${props.pos * 100}% - 12px)` }}
     >

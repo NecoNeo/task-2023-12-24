@@ -15,7 +15,7 @@ const AttrForm: React.FC<PropsWithChildren<AttrFormProps>> = (props) => {
       <div>
         <div className="flex h-10">
           <label className="block w-24 text-sm leading-6 text-gray-800">name</label>
-          <div>Scheduler</div>
+          <div className="text-gray-800">Scheduler</div>
         </div>
 
         {/* // TODO decide whether should LIMIT input NUMBER RANGE or not */}
@@ -25,7 +25,7 @@ const AttrForm: React.FC<PropsWithChildren<AttrFormProps>> = (props) => {
           <div>
             <input
               type="number"
-              className="box-border pt-0.5 pb-0.5 pl-2 w-[10rem] rounded-md border-solid border border-gray-300 hover:border-indigo-400 focus:border-indigo-600 focus:outline-0"
+              className="box-border pt-0.5 pb-0.5 pl-2 w-[10rem] text-gray-800 rounded-md border-solid border border-gray-300 hover:border-indigo-400 focus:border-indigo-600 focus:outline-0"
               value={props.startHour}
               onChange={(ev) => {
                 let iVal = Number(ev.target.value);
@@ -41,7 +41,7 @@ const AttrForm: React.FC<PropsWithChildren<AttrFormProps>> = (props) => {
           <div>
             <input
               type="number"
-              className="box-border pt-0.5 pb-0.5 pl-2 w-[10rem] rounded-md border-solid border border-gray-300 hover:border-indigo-400 focus:border-indigo-600 focus:outline-0"
+              className="box-border pt-0.5 pb-0.5 pl-2 w-[10rem] text-gray-800 rounded-md border-solid border border-gray-300 hover:border-indigo-400 focus:border-indigo-600 focus:outline-0"
               value={props.endHour}
               onChange={(ev) => {
                 let iVal = Number(ev.target.value);

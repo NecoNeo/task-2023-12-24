@@ -5,7 +5,10 @@ import { ValueSegment } from './value-segment';
 const HourLabel: React.FC<{ pos: 'left' | 'right'; hour: number }> = (props) => {
   const offset = props.pos === 'left' ? 'left-[-1.25rem]' : 'right-[-1.25rem]';
   return (
-    <div className={`absolute -top-4 ${offset} w-10 bg-white text-xs text-center`} style={{ transform: 'scale(0.8)' }}>
+    <div
+      className={`absolute -top-4 ${offset} w-10 bg-white text-gray-800 text-xs text-center`}
+      style={{ transform: 'scale(0.8)' }}
+    >
       {props.hour}:00
     </div>
   );
